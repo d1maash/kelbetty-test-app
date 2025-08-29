@@ -5,11 +5,10 @@ export default authMiddleware({
         "/",
         "/pricing",
         "/enterprise",
-        "/api/webhooks/(.*)"
+        "/sign-in(.*)",
+        "/sign-up(.*)"
     ],
-    ignoredRoutes: [
-        "/api/ai/(.*)"
-    ]
+    // Не игнорируем API routes - они должны проходить через auth
 });
 
 export const config = {

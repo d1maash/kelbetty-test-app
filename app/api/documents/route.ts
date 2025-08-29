@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs'
+import { auth, currentUser } from '@clerk/nextjs'
 import { db } from '@/lib/db'
 
 // GET - получить все документы пользователя
@@ -20,10 +20,12 @@ export async function GET(request: NextRequest) {
     })
 
     if (!user) {
+      const clerkUser = await currentUser()
       user = await db.user.create({
         data: {
           clerkId: userId,
-          email: 'user@example.com',
+          email: clerkUser?.emailAddresses[0]?.emailAddress || `user_${userId}@example.com`,
+          name: clerkUser?.firstName ? `${clerkUser.firstName} ${clerkUser.lastName || ''}`.trim() : null,
         }
       })
     }
@@ -68,10 +70,12 @@ export async function POST(request: NextRequest) {
     })
 
     if (!user) {
+      const clerkUser = await currentUser()
       user = await db.user.create({
         data: {
           clerkId: userId,
-          email: 'user@example.com',
+          email: clerkUser?.emailAddresses[0]?.emailAddress || `user_${userId}@example.com`,
+          name: clerkUser?.firstName ? `${clerkUser.firstName} ${clerkUser.lastName || ''}`.trim() : null,
         }
       })
     }
