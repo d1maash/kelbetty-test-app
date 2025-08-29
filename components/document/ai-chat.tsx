@@ -41,48 +41,63 @@ export function AIChat({ onApplyEdit, className }: AIChatProps) {
         scrollToBottom()
     }, [messages])
 
-    const handleSend = async () => {
-        if (!inputValue.trim() || isProcessing) return
+      const handleSend = async () => {
+    if (!inputValue.trim() || isProcessing) return
 
-        const userMessage: ChatMessage = {
-            id: Date.now().toString(),
-            content: inputValue,
-            isUser: true,
-            timestamp: new Date()
-        }
-
-        setMessages(prev => [...prev, userMessage])
-        setInputValue('')
-        setIsProcessing(true)
-
-        try {
-            // Apply the edit
-            if (onApplyEdit) {
-                await onApplyEdit(inputValue)
-            }
-
-            // Add AI response
-            const aiMessage: ChatMessage = {
-                id: (Date.now() + 1).toString(),
-                content: 'Готово! Я внес изменения в документ, сохранив ваш стиль форматирования. Проверьте результат и дайте знать, если нужны дополнительные правки.',
-                isUser: false,
-                timestamp: new Date()
-            }
-
-            setMessages(prev => [...prev, aiMessage])
-        } catch (error) {
-            const errorMessage: ChatMessage = {
-                id: (Date.now() + 1).toString(),
-                content: 'Извините, произошла ошибка при обработке вашего запроса. Попробуйте еще раз.',
-                isUser: false,
-                timestamp: new Date()
-            }
-
-            setMessages(prev => [...prev, errorMessage])
-        } finally {
-            setIsProcessing(false)
-        }
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      content: inputValue,
+      isUser: true,
+      timestamp: new Date()
     }
+
+    setMessages(prev => [...prev, userMessage])
+    const instruction = inputValue
+    setInputValue('')
+    setIsProcessing(true)
+
+    try {
+      // Apply the edit
+      if (onApplyEdit) {
+        await onApplyEdit(instruction)
+      }
+
+      // Add AI response
+      const aiMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        content: 'Готово! Я внес изменения в документ, сохранив ваш стиль форматирования. Проверьте результат и дайте знать, если нужны дополнительные правки.',
+        isUser: false,
+        timestamp: new Date()
+      }
+
+      setMessages(prev => [...prev, aiMessage])
+    } catch (error) {
+      console.error('AI Chat error:', error)
+      
+      let errorText = 'Извините, произошла ошибка при обработке вашего запроса.'
+      
+      if (error instanceof Error) {
+        if (error.message.includes('пуст')) {
+          errorText = 'Документ пуст. Добавьте текст для редактирования.'
+        } else if (error.message.includes('Gemini')) {
+          errorText = 'Ошибка ИИ сервиса. Проверьте настройки API ключа.'
+        } else {
+          errorText = error.message
+        }
+      }
+
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        content: errorText,
+        isUser: false,
+        timestamp: new Date()
+      }
+
+      setMessages(prev => [...prev, errorMessage])
+    } finally {
+      setIsProcessing(false)
+    }
+  }
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {

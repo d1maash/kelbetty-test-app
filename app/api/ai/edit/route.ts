@@ -13,11 +13,18 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        const { instruction, documentContent, preserveStyle } = await request.json()
+        const { instruction, documentContent, preserveStyle = true } = await request.json()
 
-        if (!instruction || !documentContent) {
+        if (!instruction) {
             return NextResponse.json(
-                { error: 'Missing required fields' },
+                { error: 'Инструкция обязательна' },
+                { status: 400 }
+            )
+        }
+
+        if (!documentContent || documentContent.trim() === '') {
+            return NextResponse.json(
+                { error: 'Документ пуст. Добавьте текст для редактирования.' },
                 { status: 400 }
             )
         }
@@ -30,17 +37,48 @@ export async function POST(request: NextRequest) {
 
             // Generate content with style preservation
             const stylePrompt = `
-Стиль документа: ${JSON.stringify(styleAnalysis)}
-Исходный документ: ${documentContent}
+Вы - профессиональный редактор документов. Ваша задача - отредактировать документ согласно инструкции, СТРОГО сохранив оригинальный стиль и форматирование.
 
-Инструкция: ${instruction}
+АНАЛИЗ СТИЛЯ ДОКУМЕНТА:
+- Тип документа: ${styleAnalysis.documentType}
+- Стиль форматирования: ${styleAnalysis.formattingStyle}
+- Тон письма: ${styleAnalysis.writingTone}
+- Ключевые элементы: ${JSON.stringify(styleAnalysis.keyElements)}
 
-ВАЖНО: Сохраните точно такой же стиль форматирования, структуру, тон и формат как в исходном документе. Измените только содержание согласно инструкции.
+ИСХОДНЫЙ ДОКУМЕНТ:
+${documentContent}
+
+ИНСТРУКЦИЯ ДЛЯ РЕДАКТИРОВАНИЯ:
+${instruction}
+
+ТРЕБОВАНИЯ:
+1. Сохраните ТОЧНО такую же структуру документа
+2. Сохраните все заголовки, списки, абзацы в том же формате
+3. Сохраните тон и стиль письма
+4. Внесите изменения ТОЛЬКО согласно инструкции
+5. Не добавляйте лишних комментариев или пояснений
+6. Верните только отредактированный текст документа
+
+ОТРЕДАКТИРОВАННЫЙ ДОКУМЕНТ:
 `
             editedContent = await generateWithGemini(stylePrompt)
         } else {
-            editedContent = await generateWithGemini(instruction, documentContent)
+            const simplePrompt = `
+Отредактируйте следующий документ согласно инструкции:
+
+ДОКУМЕНТ:
+${documentContent}
+
+ИНСТРУКЦИЯ:
+${instruction}
+
+Верните только отредактированный текст без дополнительных комментариев:
+`
+            editedContent = await generateWithGemini(simplePrompt)
         }
+
+        // Clean up the response
+        editedContent = editedContent.trim()
 
         return NextResponse.json({
             editedContent,
@@ -50,7 +88,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error('AI edit error:', error)
         return NextResponse.json(
-            { error: 'Internal server error' },
+            { error: 'Ошибка при обработке запроса. Проверьте настройки Gemini API.' },
             { status: 500 }
         )
     }
