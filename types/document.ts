@@ -6,8 +6,11 @@ export interface Document {
     fileType?: string | null
     fileSize?: number | null
     originalUrl?: string | null
-    createdAt: Date
-    updatedAt: Date
+    filePath?: string | null        // Путь к оригинальному файлу
+    thumbnailPath?: string | null   // Путь к превью файла
+    htmlContent?: string | null     // HTML версия для редактирования
+    createdAt: Date | string
+    updatedAt: Date | string
     userId: string
     style?: DocumentStyle | null
 }

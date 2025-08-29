@@ -3,6 +3,9 @@ const nextConfig = {
     images: {
         domains: ['images.unsplash.com'],
     },
+    env: {
+        DATABASE_URL: process.env.DATABASE_URL,
+    },
     webpack: (config, { isServer }) => {
         if (!isServer) {
             // Исключаем Node.js модули из клиентской сборки

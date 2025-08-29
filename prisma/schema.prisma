@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,47 +8,45 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  clerkId   String   @unique
-  email     String   @unique
+  id        String     @id @default(cuid())
+  clerkId   String     @unique
+  email     String     @unique
   name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   documents Document[]
-  
+
   @@map("users")
 }
 
 model Document {
-  id          String   @id @default(cuid())
-  title       String
-  content     String
-  fileName    String?
-  fileType    String?
-  fileSize    Int?
-  originalUrl String?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  style       DocumentStyle?
-  
+  id            String         @id @default(cuid())
+  title         String
+  content       String
+  fileName      String?
+  fileType      String?
+  fileSize      Int?
+  originalUrl   String?
+  filePath      String?
+  thumbnailPath String?
+  htmlContent   String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  userId        String
+  style         DocumentStyle?
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("documents")
 }
 
 model DocumentStyle {
-  id             String @id @default(cuid())
-  documentType   String @default("document")
-  formattingStyle String @default("standard")
-  writingTone    String @default("neutral")
-  keyElements    Json   @default("[]")
-  
-  documentId     String   @unique
-  document       Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  
+  id              String   @id @default(cuid())
+  documentType    String   @default("document")
+  formattingStyle String   @default("standard")
+  writingTone     String   @default("neutral")
+  keyElements     Json     @default("[]")
+  documentId      String   @unique
+  document        Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
   @@map("document_styles")
 }

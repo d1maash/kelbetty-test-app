@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { DocumentEditor } from '@/components/document/document-editor'
+import { FormattedDocumentViewer, DocumentViewerStyles } from '@/components/document/formatted-document-viewer'
 import { AIChat } from '@/components/document/ai-chat'
 import { DocumentList } from '@/components/document/document-list'
 import { FileUpload } from '@/components/document/file-upload'
@@ -18,6 +19,7 @@ export default function AppPage() {
     const [documents, setDocuments] = useState<Document[]>([])
     const [selectedDocument, setSelectedDocument] = useState<Document | null>(null)
     const [documentContent, setDocumentContent] = useState('')
+    const [isEditMode, setIsEditMode] = useState(false)
     const [loading, setLoading] = useState(true)
     const [showUpload, setShowUpload] = useState(false)
 
@@ -34,27 +36,31 @@ export default function AppPage() {
         }
     }, [selectedDocument])
 
-      const loadDocuments = async () => {
-    try {
-      console.log('Загружаем документы...')
-      const response = await fetch('/api/documents')
-      
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error('API error:', errorData)
-        throw new Error(errorData.error || `HTTP ${response.status}`)
-      }
-      
-      const data = await response.json()
-      console.log('Документы загружены:', data.documents?.length || 0)
-      setDocuments(data.documents || [])
-    } catch (error) {
-      console.error('Failed to load documents:', error)
-      // Можно добавить toast уведомление об ошибке
-    } finally {
-      setLoading(false)
+    const loadDocuments = async () => {
+        try {
+            console.log('Загружаем документы...')
+            const response = await fetch('/api/documents')
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                console.error('API error:', errorData)
+                throw new Error(errorData.error || `HTTP ${response.status}`)
+            }
+
+            const data = await response.json()
+            console.log('Документы загружены:', data.documents?.length || 0)
+
+            // Убеждаемся что documents это массив
+            const documents = Array.isArray(data.documents) ? data.documents : []
+            setDocuments(documents)
+        } catch (error) {
+            console.error('Failed to load documents:', error)
+            // Устанавливаем пустой массив при ошибке
+            setDocuments([])
+        } finally {
+            setLoading(false)
+        }
     }
-  }
 
     // Redirect to sign-in if not authenticated
     if (isLoaded && !isSignedIn) {
@@ -163,12 +169,38 @@ export default function AppPage() {
         setShowUpload(false)
     }
 
+    const handleDownloadOriginal = async () => {
+        if (!selectedDocument) return
+
+        try {
+            const response = await fetch(`/api/documents/${selectedDocument.id}/download`)
+
+            if (!response.ok) {
+                throw new Error('Failed to download file')
+            }
+
+            const blob = await response.blob()
+            const url = window.URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = selectedDocument.fileName || 'document'
+            document.body.appendChild(a)
+            a.click()
+            window.URL.revokeObjectURL(url)
+            document.body.removeChild(a)
+        } catch (error) {
+            console.error('Failed to download file:', error)
+        }
+    }
+
     const handleAIEdit = async (instruction: string) => {
         if (!selectedDocument || !documentContent.trim()) {
             throw new Error('Документ пуст. Добавьте текст для редактирования.')
         }
 
         try {
+            console.log('Отправляем запрос к ИИ:', instruction)
+
             const response = await fetch('/api/ai/edit', {
                 method: 'POST',
                 headers: {
@@ -183,14 +215,27 @@ export default function AppPage() {
 
             if (!response.ok) {
                 const errorData = await response.json()
-                throw new Error(errorData.error || 'Ошибка при обработке запроса')
+                console.error('AI API error:', errorData)
+                throw new Error(errorData.error || `HTTP ${response.status}: Ошибка ИИ API`)
             }
 
             const data = await response.json()
+
+            if (!data.editedContent) {
+                throw new Error('ИИ не вернул отредактированный контент')
+            }
+
+            console.log('ИИ успешно отредактировал документ')
             handleContentChange(data.editedContent)
 
             // Auto-save after AI edit
-            await handleSaveDocument(data.editedContent)
+            try {
+                await handleSaveDocument(data.editedContent)
+                console.log('Документ автоматически сохранен')
+            } catch (saveError) {
+                console.error('Ошибка автосохранения:', saveError)
+                // Не бросаем ошибку, так как основная задача (редактирование) выполнена
+            }
 
         } catch (error) {
             console.error('AI edit error:', error)
@@ -257,7 +302,7 @@ export default function AppPage() {
 
                         {/* Document Editor */}
                         <div className="col-span-12 lg:col-span-6">
-                            {selectedDocument ? (
+                            {isEditMode && selectedDocument ? (
                                 <DocumentEditor
                                     key={selectedDocument.id}
                                     initialContent={selectedDocument.content}
@@ -265,22 +310,11 @@ export default function AppPage() {
                                     onSave={handleSaveDocument}
                                 />
                             ) : (
-                                <div className="h-full flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg">
-                                    <div className="text-center text-muted-foreground">
-                                        <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                                        <p className="text-lg font-medium mb-2">Выберите документ</p>
-                                        <p className="text-sm">
-                                            Выберите документ из списка или создайте новый, чтобы начать редактирование
-                                        </p>
-                                        <Button
-                                            onClick={handleCreateDocument}
-                                            className="mt-4"
-                                            variant="gradient"
-                                        >
-                                            Создать документ
-                                        </Button>
-                                    </div>
-                                </div>
+                                <FormattedDocumentViewer
+                                    document={selectedDocument}
+                                    onEdit={() => setIsEditMode(true)}
+                                    onDownload={handleDownloadOriginal}
+                                />
                             )}
                         </div>
 
@@ -296,3 +330,6 @@ export default function AppPage() {
         </div>
     )
 }
+
+// Add document viewer styles
+export { DocumentViewerStyles } from '@/components/document/formatted-document-viewer'
