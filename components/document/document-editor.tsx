@@ -11,7 +11,8 @@ import {
     AlignLeft,
     Save,
     Download,
-    Sparkles
+    Sparkles,
+    Eye
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -19,6 +20,7 @@ interface DocumentEditorProps {
     initialContent?: string
     onContentChange?: (content: string) => void
     onSave?: (content: string) => void
+    onFinishEditing?: () => void
     className?: string
 }
 
@@ -26,6 +28,7 @@ export function DocumentEditor({
     initialContent = '',
     onContentChange,
     onSave,
+    onFinishEditing,
     className
 }: DocumentEditorProps) {
     const [content, setContent] = useState(initialContent)
@@ -112,6 +115,16 @@ export function DocumentEditor({
                             <Save className="h-4 w-4 mr-2" />
                             {isSaving ? 'Сохранение...' : 'Сохранить'}
                         </Button>
+                        {onFinishEditing && (
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={onFinishEditing}
+                            >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Готово
+                            </Button>
+                        )}
                     </div>
                 </div>
 

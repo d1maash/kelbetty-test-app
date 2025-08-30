@@ -5,6 +5,7 @@ import { useAuth, UserButton } from '@clerk/nextjs'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/theme-toggle'
+
 import { DocumentEditor } from '@/components/document/document-editor'
 import { FormattedDocumentViewer, DocumentViewerStyles } from '@/components/document/formatted-document-viewer'
 import { AIChat } from '@/components/document/ai-chat'
@@ -300,7 +301,7 @@ export default function AppPage() {
                             />
                         </div>
 
-                        {/* Document Editor */}
+                        {/* Document Editor/Viewer */}
                         <div className="col-span-12 lg:col-span-6">
                             {isEditMode && selectedDocument ? (
                                 <DocumentEditor
@@ -308,6 +309,7 @@ export default function AppPage() {
                                     initialContent={selectedDocument.content}
                                     onContentChange={handleContentChange}
                                     onSave={handleSaveDocument}
+                                    onFinishEditing={() => setIsEditMode(false)}
                                 />
                             ) : (
                                 <FormattedDocumentViewer
@@ -321,7 +323,8 @@ export default function AppPage() {
                         {/* AI Chat */}
                         <div className="col-span-12 lg:col-span-3">
                             <AIChat
-                                onApplyEdit={selectedDocument ? handleAIEdit : undefined}
+                                onApplyEdit={handleAIEdit}
+                                documentContent={documentContent}
                             />
                         </div>
                     </div>

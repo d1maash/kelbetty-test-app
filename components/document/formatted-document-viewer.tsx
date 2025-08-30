@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Download, FileText, Presentation, FileSpreadsheet, FileImage, Eye, Edit3 } from 'lucide-react'
+import { Download, FileText, Presentation, FileSpreadsheet, FileImage, Eye, Edit, Bot } from 'lucide-react'
 import { Document } from '@/types/document'
 
 interface FormattedDocumentViewerProps {
@@ -103,21 +103,25 @@ export function FormattedDocumentViewer({
                             size="sm"
                             onClick={() => setViewMode('text')}
                         >
-                            <Edit3 className="h-4 w-4 mr-1" />
+                            <FileText className="h-4 w-4 mr-1" />
                             Текст
                         </Button>
                     </div>
                 </div>
 
-                <div className="flex space-x-2 mt-3">
+                <div className="flex flex-wrap gap-2 mt-3">
                     <Button onClick={onEdit} size="sm">
-                        <Edit3 className="h-4 w-4 mr-1" />
-                        Редактировать с ИИ
+                        <Edit className="h-4 w-4 mr-1" />
+                        Редактировать вручную
                     </Button>
                     <Button onClick={onDownload} variant="outline" size="sm">
                         <Download className="h-4 w-4 mr-1" />
                         Скачать оригинал
                     </Button>
+                    <div className="text-xs text-muted-foreground flex items-center">
+                        <Bot className="h-3 w-3 mr-1" />
+                        Или используйте AI чат →
+                    </div>
                 </div>
             </CardHeader>
 
