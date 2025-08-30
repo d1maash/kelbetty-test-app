@@ -128,15 +128,15 @@ export function FormattedDocumentViewer({
             <CardContent className="flex-1 p-0">
                 <ScrollArea className="h-full">
                     <div className="p-6">
-                        {viewMode === 'formatted' && document.htmlContent ? (
+                        {viewMode === 'formatted' && (document.htmlContent || document.content.includes('<')) ? (
                             <div
-                                className="formatted-content"
-                                dangerouslySetInnerHTML={{ __html: document.htmlContent }}
+                                className="formatted-content prose prose-sm max-w-none"
+                                dangerouslySetInnerHTML={{ __html: document.htmlContent || document.content }}
                             />
                         ) : (
                             <div className="text-content">
                                 <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed">
-                                    {document.content}
+                                    {document.content.replace(/<[^>]*>/g, '')}
                                 </pre>
                             </div>
                         )}

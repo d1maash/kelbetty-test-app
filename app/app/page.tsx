@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/theme-toggle'
 
-import { DocumentEditor } from '@/components/document/document-editor'
+import { RichEditor } from '@/components/document/rich-editor'
 import { FormattedDocumentViewer, DocumentViewerStyles } from '@/components/document/formatted-document-viewer'
 import { AIChat } from '@/components/document/ai-chat'
 import { DocumentList } from '@/components/document/document-list'
@@ -128,7 +128,12 @@ export default function AppPage() {
     const handleContentChange = (content: string) => {
         setDocumentContent(content)
         if (selectedDocument) {
-            setSelectedDocument(prev => prev ? { ...prev, content } : null)
+            // Обновляем и обычный контент, и HTML версию
+            setSelectedDocument(prev => prev ? { 
+                ...prev, 
+                content,
+                htmlContent: content.includes('<') ? content : `<p>${content.replace(/\n/g, '</p><p>')}</p>`
+            } : null)
         }
     }
 
@@ -304,7 +309,7 @@ export default function AppPage() {
                         {/* Document Editor/Viewer */}
                         <div className="col-span-12 lg:col-span-6">
                             {isEditMode && selectedDocument ? (
-                                <DocumentEditor
+                                <RichEditor
                                     key={selectedDocument.id}
                                     initialContent={selectedDocument.content}
                                     onContentChange={handleContentChange}
