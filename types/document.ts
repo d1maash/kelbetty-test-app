@@ -2,17 +2,26 @@ export interface Document {
     id: string
     title: string
     content: string
-    createdAt: Date
-    updatedAt: Date
+    fileName?: string | null
+    fileType?: string | null
+    fileSize?: number | null
+    originalUrl?: string | null
+    filePath?: string | null        // Путь к оригинальному файлу
+    thumbnailPath?: string | null   // Путь к превью файла
+    htmlContent?: string | null     // HTML версия для редактирования
+    createdAt: Date | string
+    updatedAt: Date | string
     userId: string
-    style?: DocumentStyle
+    style?: DocumentStyle | null
 }
 
 export interface DocumentStyle {
+    id: string
     documentType: string
     formattingStyle: string
     writingTone: string
-    keyElements: string[]
+    keyElements: any // JSON field
+    documentId: string
 }
 
 export interface ChatMessage {

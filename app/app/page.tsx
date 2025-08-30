@@ -6,73 +6,29 @@ import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { DocumentEditor } from '@/components/document/document-editor'
+import { FormattedDocumentViewer, DocumentViewerStyles } from '@/components/document/formatted-document-viewer'
 import { AIChat } from '@/components/document/ai-chat'
 import { DocumentList } from '@/components/document/document-list'
+import { FileUpload } from '@/components/document/file-upload'
 import { Document } from '@/types/document'
-import { FileText } from 'lucide-react'
+import { FileText, Upload } from 'lucide-react'
 import Link from 'next/link'
-
-// Mock data for demo
-const mockDocuments: Document[] = [
-    {
-        id: '1',
-        title: 'Деловое письмо',
-        content: `Уважаемый г-н Петров,
-
-Благодарим Вас за интерес к нашей компании и предоставленное коммерческое предложение.
-
-После тщательного рассмотрения Вашего предложения, мы готовы обсудить условия сотрудничества. Особенно нас заинтересовали следующие аспекты:
-
-1. Качество предоставляемых услуг
-2. Гибкость в ценообразовании
-3. Сроки выполнения работ
-
-Предлагаем назначить встречу для обсуждения деталей на следующей неделе. Пожалуйста, сообщите удобное для Вас время.
-
-С уважением,
-Анна Иванова
-Менеджер по закупкам`,
-        createdAt: new Date('2024-01-15'),
-        updatedAt: new Date('2024-01-15'),
-        userId: 'user1'
-    },
-    {
-        id: '2',
-        title: 'Отчет о проделанной работе',
-        content: `# Отчет о работе за январь 2024
-
-## Основные достижения
-
-В январе 2024 года были достигнуты следующие результаты:
-
-- Завершено 15 проектов
-- Привлечено 8 новых клиентов
-- Увеличена выручка на 23%
-
-## Проблемы и решения
-
-### Проблема 1: Задержки в поставках
-**Решение:** Найден новый поставщик с более надежными сроками.
-
-### Проблема 2: Нехватка персонала
-**Решение:** Запущен процесс найма дополнительных сотрудников.
-
-## Планы на февраль
-
-1. Запуск нового продукта
-2. Расширение команды
-3. Улучшение процессов`,
-        createdAt: new Date('2024-01-20'),
-        updatedAt: new Date('2024-01-22'),
-        userId: 'user1'
-    }
-]
 
 export default function AppPage() {
     const { isSignedIn, isLoaded } = useAuth()
-    const [documents, setDocuments] = useState<Document[]>(mockDocuments)
+    const [documents, setDocuments] = useState<Document[]>([])
     const [selectedDocument, setSelectedDocument] = useState<Document | null>(null)
     const [documentContent, setDocumentContent] = useState('')
+    const [isEditMode, setIsEditMode] = useState(false)
+    const [loading, setLoading] = useState(true)
+    const [showUpload, setShowUpload] = useState(false)
+
+    // Load documents from API
+    useEffect(() => {
+        if (isSignedIn) {
+            loadDocuments()
+        }
+    }, [isSignedIn])
 
     useEffect(() => {
         if (selectedDocument) {
@@ -80,12 +36,38 @@ export default function AppPage() {
         }
     }, [selectedDocument])
 
+    const loadDocuments = async () => {
+        try {
+            console.log('Загружаем документы...')
+            const response = await fetch('/api/documents')
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                console.error('API error:', errorData)
+                throw new Error(errorData.error || `HTTP ${response.status}`)
+            }
+
+            const data = await response.json()
+            console.log('Документы загружены:', data.documents?.length || 0)
+
+            // Убеждаемся что documents это массив
+            const documents = Array.isArray(data.documents) ? data.documents : []
+            setDocuments(documents)
+        } catch (error) {
+            console.error('Failed to load documents:', error)
+            // Устанавливаем пустой массив при ошибке
+            setDocuments([])
+        } finally {
+            setLoading(false)
+        }
+    }
+
     // Redirect to sign-in if not authenticated
     if (isLoaded && !isSignedIn) {
         redirect('/sign-in')
     }
 
-    if (!isLoaded) {
+    if (!isLoaded || loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
@@ -96,71 +78,164 @@ export default function AppPage() {
         )
     }
 
-    const handleCreateDocument = () => {
-        const newDocument: Document = {
-            id: Date.now().toString(),
-            title: `Новый документ ${documents.length + 1}`,
-            content: '',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            userId: 'user1'
-        }
+    const handleCreateDocument = async () => {
+        try {
+            const response = await fetch('/api/documents', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: `Новый документ ${documents.length + 1}`,
+                    content: '',
+                }),
+            })
 
-        setDocuments(prev => [newDocument, ...prev])
-        setSelectedDocument(newDocument)
+            if (response.ok) {
+                const data = await response.json()
+                const newDocument = data.document
+                setDocuments(prev => [newDocument, ...prev])
+                setSelectedDocument(newDocument)
+            }
+        } catch (error) {
+            console.error('Failed to create document:', error)
+        }
     }
 
     const handleSelectDocument = (document: Document) => {
         setSelectedDocument(document)
     }
 
-    const handleDeleteDocument = (documentId: string) => {
-        setDocuments(prev => prev.filter(doc => doc.id !== documentId))
-        if (selectedDocument?.id === documentId) {
-            setSelectedDocument(null)
-            setDocumentContent('')
+    const handleDeleteDocument = async (documentId: string) => {
+        try {
+            const response = await fetch(`/api/documents/${documentId}`, {
+                method: 'DELETE',
+            })
+
+            if (response.ok) {
+                setDocuments(prev => prev.filter(doc => doc.id !== documentId))
+                if (selectedDocument?.id === documentId) {
+                    setSelectedDocument(null)
+                    setDocumentContent('')
+                }
+            }
+        } catch (error) {
+            console.error('Failed to delete document:', error)
         }
     }
 
     const handleContentChange = (content: string) => {
         setDocumentContent(content)
         if (selectedDocument) {
-            setDocuments(prev =>
-                prev.map(doc =>
-                    doc.id === selectedDocument.id
-                        ? { ...doc, content, updatedAt: new Date() }
-                        : doc
-                )
-            )
+            setSelectedDocument(prev => prev ? { ...prev, content } : null)
         }
     }
 
     const handleSaveDocument = async (content: string) => {
         if (!selectedDocument) return
 
-        // Update document in state
-        setDocuments(prev =>
-            prev.map(doc =>
-                doc.id === selectedDocument.id
-                    ? { ...doc, content, updatedAt: new Date() }
-                    : doc
-            )
-        )
+        try {
+            const response = await fetch(`/api/documents/${selectedDocument.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: selectedDocument.title,
+                    content,
+                }),
+            })
 
-        // Here you would typically save to a backend
-        console.log('Document saved:', { id: selectedDocument.id, content })
+            if (response.ok) {
+                const data = await response.json()
+                const updatedDocument = data.document
+
+                // Update document in state
+                setDocuments(prev =>
+                    prev.map(doc =>
+                        doc.id === selectedDocument.id ? updatedDocument : doc
+                    )
+                )
+                setSelectedDocument(updatedDocument)
+            }
+        } catch (error) {
+            console.error('Failed to save document:', error)
+        }
     }
 
-    const handleAIEdit = async (instruction: string) => {
+    const handleFileUploaded = (document: any) => {
+        setDocuments(prev => [document, ...prev])
+        setSelectedDocument(document)
+        setShowUpload(false)
+    }
+
+    const handleDownloadOriginal = async () => {
         if (!selectedDocument) return
 
         try {
-            // Mock AI edit - in real app, this would call the Gemini API
-            await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate API delay
+            const response = await fetch(`/api/documents/${selectedDocument.id}/download`)
 
-            // For demo purposes, we'll just add a note
-            const editedContent = documentContent + `\n\n[ИИ правка: ${instruction}]`
-            handleContentChange(editedContent)
+            if (!response.ok) {
+                throw new Error('Failed to download file')
+            }
+
+            const blob = await response.blob()
+            const url = window.URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = selectedDocument.fileName || 'document'
+            document.body.appendChild(a)
+            a.click()
+            window.URL.revokeObjectURL(url)
+            document.body.removeChild(a)
+        } catch (error) {
+            console.error('Failed to download file:', error)
+        }
+    }
+
+    const handleAIEdit = async (instruction: string) => {
+        if (!selectedDocument || !documentContent.trim()) {
+            throw new Error('Документ пуст. Добавьте текст для редактирования.')
+        }
+
+        try {
+            console.log('Отправляем запрос к ИИ:', instruction)
+
+            const response = await fetch('/api/ai/edit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    instruction,
+                    documentContent,
+                    preserveStyle: true,
+                }),
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                console.error('AI API error:', errorData)
+                throw new Error(errorData.error || `HTTP ${response.status}: Ошибка ИИ API`)
+            }
+
+            const data = await response.json()
+
+            if (!data.editedContent) {
+                throw new Error('ИИ не вернул отредактированный контент')
+            }
+
+            console.log('ИИ успешно отредактировал документ')
+            handleContentChange(data.editedContent)
+
+            // Auto-save after AI edit
+            try {
+                await handleSaveDocument(data.editedContent)
+                console.log('Документ автоматически сохранен')
+            } catch (saveError) {
+                console.error('Ошибка автосохранения:', saveError)
+                // Не бросаем ошибку, так как основная задача (редактирование) выполнена
+            }
 
         } catch (error) {
             console.error('AI edit error:', error)
@@ -181,6 +256,14 @@ export default function AppPage() {
                     </Link>
 
                     <div className="flex items-center space-x-4">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowUpload(!showUpload)}
+                        >
+                            <Upload className="h-4 w-4 mr-2" />
+                            Загрузить файл
+                        </Button>
                         <ThemeToggle />
                         <UserButton afterSignOutUrl="/" />
                     </div>
@@ -189,55 +272,64 @@ export default function AppPage() {
 
             {/* Main Content */}
             <div className="container mx-auto p-4 h-[calc(100vh-4rem)]">
-                <div className="grid grid-cols-12 gap-4 h-full">
-                    {/* Document List */}
-                    <div className="col-span-12 lg:col-span-3">
-                        <DocumentList
-                            documents={documents}
-                            selectedDocumentId={selectedDocument?.id}
-                            onSelectDocument={handleSelectDocument}
-                            onCreateDocument={handleCreateDocument}
-                            onDeleteDocument={handleDeleteDocument}
-                        />
-                    </div>
-
-                    {/* Document Editor */}
-                    <div className="col-span-12 lg:col-span-6">
-                        {selectedDocument ? (
-                            <DocumentEditor
-                                key={selectedDocument.id}
-                                initialContent={selectedDocument.content}
-                                onContentChange={handleContentChange}
-                                onSave={handleSaveDocument}
+                {showUpload ? (
+                    <div className="grid grid-cols-12 gap-4 h-full">
+                        <div className="col-span-12 lg:col-span-8">
+                            <FileUpload onFileUploaded={handleFileUploaded} />
+                        </div>
+                        <div className="col-span-12 lg:col-span-4">
+                            <DocumentList
+                                documents={documents}
+                                selectedDocumentId={selectedDocument?.id}
+                                onSelectDocument={handleSelectDocument}
+                                onCreateDocument={handleCreateDocument}
+                                onDeleteDocument={handleDeleteDocument}
                             />
-                        ) : (
-                            <div className="h-full flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg">
-                                <div className="text-center text-muted-foreground">
-                                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                                    <p className="text-lg font-medium mb-2">Выберите документ</p>
-                                    <p className="text-sm">
-                                        Выберите документ из списка или создайте новый, чтобы начать редактирование
-                                    </p>
-                                    <Button
-                                        onClick={handleCreateDocument}
-                                        className="mt-4"
-                                        variant="gradient"
-                                    >
-                                        Создать документ
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
+                        </div>
                     </div>
+                ) : (
+                    <div className="grid grid-cols-12 gap-4 h-full">
+                        {/* Document List */}
+                        <div className="col-span-12 lg:col-span-3">
+                            <DocumentList
+                                documents={documents}
+                                selectedDocumentId={selectedDocument?.id}
+                                onSelectDocument={handleSelectDocument}
+                                onCreateDocument={handleCreateDocument}
+                                onDeleteDocument={handleDeleteDocument}
+                            />
+                        </div>
 
-                    {/* AI Chat */}
-                    <div className="col-span-12 lg:col-span-3">
-                        <AIChat
-                            onApplyEdit={selectedDocument ? handleAIEdit : undefined}
-                        />
+                        {/* Document Editor */}
+                        <div className="col-span-12 lg:col-span-6">
+                            {isEditMode && selectedDocument ? (
+                                <DocumentEditor
+                                    key={selectedDocument.id}
+                                    initialContent={selectedDocument.content}
+                                    onContentChange={handleContentChange}
+                                    onSave={handleSaveDocument}
+                                />
+                            ) : (
+                                <FormattedDocumentViewer
+                                    document={selectedDocument}
+                                    onEdit={() => setIsEditMode(true)}
+                                    onDownload={handleDownloadOriginal}
+                                />
+                            )}
+                        </div>
+
+                        {/* AI Chat */}
+                        <div className="col-span-12 lg:col-span-3">
+                            <AIChat
+                                onApplyEdit={selectedDocument ? handleAIEdit : undefined}
+                            />
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     )
 }
+
+// Add document viewer styles
+export { DocumentViewerStyles } from '@/components/document/formatted-document-viewer'

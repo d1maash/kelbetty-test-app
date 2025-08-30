@@ -52,13 +52,14 @@ export function AIChat({ onApplyEdit, className }: AIChatProps) {
         }
 
         setMessages(prev => [...prev, userMessage])
+        const instruction = inputValue
         setInputValue('')
         setIsProcessing(true)
 
         try {
             // Apply the edit
             if (onApplyEdit) {
-                await onApplyEdit(inputValue)
+                await onApplyEdit(instruction)
             }
 
             // Add AI response
@@ -71,9 +72,23 @@ export function AIChat({ onApplyEdit, className }: AIChatProps) {
 
             setMessages(prev => [...prev, aiMessage])
         } catch (error) {
+            console.error('AI Chat error:', error)
+
+            let errorText = 'Извините, произошла ошибка при обработке вашего запроса.'
+
+            if (error instanceof Error) {
+                if (error.message.includes('пуст')) {
+                    errorText = 'Документ пуст. Добавьте текст для редактирования.'
+                } else if (error.message.includes('Gemini')) {
+                    errorText = 'Ошибка ИИ сервиса. Проверьте настройки API ключа.'
+                } else {
+                    errorText = error.message
+                }
+            }
+
             const errorMessage: ChatMessage = {
                 id: (Date.now() + 1).toString(),
-                content: 'Извините, произошла ошибка при обработке вашего запроса. Попробуйте еще раз.',
+                content: errorText,
                 isUser: false,
                 timestamp: new Date()
             }
