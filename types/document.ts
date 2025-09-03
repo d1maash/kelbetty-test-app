@@ -9,6 +9,8 @@ export interface Document {
     filePath?: string | null        // Путь к оригинальному файлу
     thumbnailPath?: string | null   // Путь к превью файла
     htmlContent?: string | null     // HTML версия для редактирования
+    detectedType?: string | null    // Автоматически определенный тип документа
+    mimeType?: string | null        // MIME тип файла
     createdAt: Date | string
     updatedAt: Date | string
     userId: string

@@ -18,6 +18,7 @@ import {
     RotateCcw
 } from 'lucide-react'
 import { Document } from '@/types/document'
+import { DocumentAnalysisInfo } from './document-analysis-info'
 import dynamic from 'next/dynamic'
 
 // Динамический импорт компонентов для избежания SSR проблем
@@ -55,33 +56,47 @@ export function UniversalDocumentViewer({
     }
 
     const getFileIcon = () => {
-        if (!document.fileType) return <FileText className="h-5 w-5" />
+        // Используем автоматически определенный тип документа
+        const documentType = document.detectedType || document.fileType || ''
+        
+        if (!documentType) return <FileText className="h-5 w-5" />
 
-        if (document.fileType.includes('word') || document.fileType.includes('docx')) {
-            return <FileText className="h-5 w-5 text-blue-600" />
+        switch (documentType) {
+            case 'pdf':
+                return <FileImage className="h-5 w-5 text-red-600" />
+            case 'word':
+                return <FileText className="h-5 w-5 text-blue-600" />
+            case 'excel':
+                return <FileSpreadsheet className="h-5 w-5 text-green-600" />
+            case 'powerpoint':
+                return <Presentation className="h-5 w-5 text-orange-600" />
+            case 'text':
+                return <FileText className="h-5 w-5 text-gray-600" />
+            case 'code':
+                return <FileText className="h-5 w-5 text-purple-600" />
+            case 'image':
+                return <FileImage className="h-5 w-5 text-pink-600" />
+            default:
+                return <FileText className="h-5 w-5" />
         }
-        if (document.fileType.includes('presentation') || document.fileType.includes('pptx')) {
-            return <Presentation className="h-5 w-5 text-orange-600" />
-        }
-        if (document.fileType.includes('sheet') || document.fileType.includes('excel') || document.fileType.includes('xlsx')) {
-            return <FileSpreadsheet className="h-5 w-5 text-green-600" />
-        }
-        if (document.fileType.includes('pdf')) {
-            return <FileImage className="h-5 w-5 text-red-600" />
-        }
-
-        return <FileText className="h-5 w-5" />
     }
 
     const getFileTypeBadge = () => {
-        if (!document.fileType) return 'Документ'
+        // Используем автоматически определенный тип документа
+        const documentType = document.detectedType || document.fileType || ''
+        
+        if (!documentType) return 'Документ'
 
-        if (document.fileType.includes('word') || document.fileType.includes('docx')) return 'Word'
-        if (document.fileType.includes('presentation') || document.fileType.includes('pptx')) return 'PowerPoint'
-        if (document.fileType.includes('sheet') || document.fileType.includes('excel') || document.fileType.includes('xlsx')) return 'Excel'
-        if (document.fileType.includes('pdf')) return 'PDF'
-
-        return 'Документ'
+        switch (documentType) {
+            case 'pdf': return 'PDF'
+            case 'word': return 'Word'
+            case 'excel': return 'Excel'
+            case 'powerpoint': return 'PowerPoint'
+            case 'text': return 'Текст'
+            case 'code': return 'Код'
+            case 'image': return 'Изображение'
+            default: return 'Документ'
+        }
     }
 
     const formatFileSize = (bytes?: number | null) => {
@@ -93,9 +108,21 @@ export function UniversalDocumentViewer({
     }
 
     const getDocumentViewer = () => {
-        if (!document.fileType) return null
+        // Используем автоматически определенный тип документа
+        const documentType = document.detectedType || document.fileType || ''
+        
+        if (!documentType) {
+            // Для других форматов показываем текстовое содержимое
+            return (
+                <div className="p-6">
+                    <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed bg-gray-50 p-4 rounded-lg">
+                        {document.content.replace(/<[^>]*>/g, '')}
+                    </pre>
+                </div>
+            )
+        }
 
-        if (document.fileType.includes('pdf')) {
+        if (documentType === 'pdf') {
             return (
                 <PDFViewer 
                     filePath={document.filePath || document.originalUrl || ''}
@@ -105,7 +132,7 @@ export function UniversalDocumentViewer({
             )
         }
 
-        if (document.fileType.includes('word') || document.fileType.includes('docx')) {
+        if (documentType === 'word') {
             return (
                 <WordViewer 
                     filePath={document.filePath || document.originalUrl || ''}
@@ -114,7 +141,7 @@ export function UniversalDocumentViewer({
             )
         }
 
-        if (document.fileType.includes('excel') || document.fileType.includes('xlsx')) {
+        if (documentType === 'excel') {
             return (
                 <ExcelViewer 
                     filePath={document.filePath || document.originalUrl || ''}
@@ -123,7 +150,7 @@ export function UniversalDocumentViewer({
             )
         }
 
-        if (document.fileType.includes('presentation') || document.fileType.includes('pptx')) {
+        if (documentType === 'powerpoint') {
             return (
                 <PowerPointViewer 
                     filePath={document.filePath || document.originalUrl || ''}
@@ -132,12 +159,57 @@ export function UniversalDocumentViewer({
             )
         }
 
-        // Для других форматов показываем текстовое содержимое
+        if (documentType === 'text' || documentType === 'code') {
+            return (
+                <div className="p-6">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-lg font-semibold text-gray-800">
+                                {documentType === 'code' ? 'Исходный код' : 'Текстовый документ'}
+                            </h3>
+                            <Badge variant="secondary">
+                                {documentType === 'code' ? 'КОД' : 'ТЕКСТ'}
+                            </Badge>
+                        </div>
+                        <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-gray-700">
+                            {document.content.replace(/<[^>]*>/g, '')}
+                        </pre>
+                    </div>
+                </div>
+            )
+        }
+
+        if (documentType === 'image') {
+            return (
+                <div className="p-6">
+                    <div className="bg-gray-50 p-4 rounded-lg text-center">
+                        <div className="text-lg font-semibold text-gray-800 mb-3">
+                            Изображение
+                        </div>
+                        <div className="text-sm text-gray-600">
+                            Файл изображения загружен. Для просмотра скачайте файл.
+                        </div>
+                    </div>
+                </div>
+            )
+        }
+
+        // Для неизвестных форматов показываем текстовое содержимое
         return (
             <div className="p-6">
-                <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed bg-gray-50 p-4 rounded-lg">
-                    {document.content.replace(/<[^>]*>/g, '')}
-                </pre>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-lg font-semibold text-gray-800">
+                            Документ
+                        </h3>
+                        <Badge variant="secondary">
+                            {documentType.toUpperCase() || 'НЕИЗВЕСТНО'}
+                        </Badge>
+                    </div>
+                    <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-gray-700">
+                        {document.content.replace(/<[^>]*>/g, '')}
+                    </pre>
+                </div>
             </div>
         )
     }
@@ -229,6 +301,11 @@ export function UniversalDocumentViewer({
 
             <CardContent className="flex-1 p-0">
                 <ScrollArea className="h-full">
+                    {/* Информация об анализе документа */}
+                    {document.detectedType && (
+                        <DocumentAnalysisInfo document={document} />
+                    )}
+                    
                     {viewMode === 'original' ? (
                         getDocumentViewer()
                     ) : viewMode === 'formatted' && (document.htmlContent || document.content.includes('<')) ? (
