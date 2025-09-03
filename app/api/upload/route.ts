@@ -3,6 +3,7 @@ import { auth, currentUser } from '@clerk/nextjs'
 import { parseFile } from '@/lib/file-parsers'
 import { parseFileWithFormatting, saveOriginalFile } from '@/lib/advanced-file-parsers'
 import { isFileTypeSupported } from '@/lib/file-utils'
+import { analyzeDocument } from '@/lib/document-analyzer'
 import { db } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
@@ -59,6 +60,25 @@ export async function POST(request: NextRequest) {
         console.log('Upload API: Конвертируем файл в буфер')
         const bytes = await file.arrayBuffer()
         const buffer = Buffer.from(bytes)
+
+        // Автоматический анализ документа
+        console.log('Upload API: Анализируем тип документа')
+        let documentAnalysis
+        try {
+            documentAnalysis = await analyzeDocument(buffer, file.name, file.type)
+            console.log('Upload API: Тип документа определен:', documentAnalysis.detectedType, 'с уверенностью:', documentAnalysis.confidence)
+        } catch (error) {
+            console.warn('Upload API: Ошибка анализа документа:', error)
+            // Создаем базовый анализ если что-то пошло не так
+            documentAnalysis = {
+                detectedType: 'unknown',
+                mimeType: file.type || 'application/octet-stream',
+                confidence: 0.5,
+                metadata: {},
+                preview: 'Документ загружен',
+                isReadable: true
+            }
+        }
 
         // Parse file content
         console.log('Upload API: Парсим содержимое файла с сохранением форматирования')
@@ -129,10 +149,9 @@ export async function POST(request: NextRequest) {
                 fileType: file.type,
                 fileSize: file.size,
                 filePath: filePath,
+                detectedType: documentAnalysis.detectedType,
+                mimeType: documentAnalysis.mimeType,
                 userId: user.id,
-            },
-            include: {
-                style: true
             }
         })
 

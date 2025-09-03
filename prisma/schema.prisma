@@ -30,6 +30,8 @@ model Document {
   filePath      String?
   thumbnailPath String?
   htmlContent   String?
+  detectedType  String?
+  mimeType      String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   userId        String
