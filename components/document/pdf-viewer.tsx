@@ -29,6 +29,27 @@ export default function PDFViewer({ filePath, rotation = 0, isFullscreen = false
     useEffect(() => {
         setLoading(true)
         setError(null)
+
+        // Автоматически анализируем PDF при загрузке
+        const analyzePDF = async () => {
+            try {
+                const response = await fetch(filePath)
+                if (response.ok) {
+                    const buffer = await response.arrayBuffer()
+                    const diagnostics = await getPDFInfo(Buffer.from(buffer))
+                    setPdfDiagnostics(diagnostics)
+
+                    // Если PDF невалиден, показываем предупреждение
+                    if (!diagnostics.isValid) {
+                        console.warn('PDF validation failed:', diagnostics.error)
+                    }
+                }
+            } catch (diagnosticError) {
+                console.warn('Initial PDF diagnostics failed:', diagnosticError)
+            }
+        }
+
+        analyzePDF()
     }, [filePath])
 
     const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
@@ -130,16 +151,29 @@ export default function PDFViewer({ filePath, rotation = 0, isFullscreen = false
                                 Попробовать снова
                             </Button>
 
-                            {pdfDiagnostics && (
-                                <Button
-                                    onClick={() => setShowDiagnostics(!showDiagnostics)}
-                                    className="w-full"
-                                    variant="secondary"
-                                >
-                                    <AlertTriangle className="h-4 w-4 mr-2" />
-                                    {showDiagnostics ? 'Скрыть' : 'Показать'} диагностику
-                                </Button>
-                            )}
+                            <Button
+                                onClick={async () => {
+                                    try {
+                                        setLoading(true)
+                                        const response = await fetch(filePath)
+                                        if (response.ok) {
+                                            const buffer = await response.arrayBuffer()
+                                            const diagnostics = await getPDFInfo(Buffer.from(buffer))
+                                            setPdfDiagnostics(diagnostics)
+                                            setShowDiagnostics(true)
+                                        }
+                                    } catch (diagnosticError) {
+                                        console.warn('PDF diagnostics failed:', diagnosticError)
+                                    } finally {
+                                        setLoading(false)
+                                    }
+                                }}
+                                className="w-full"
+                                variant="secondary"
+                            >
+                                <AlertTriangle className="h-4 w-4 mr-2" />
+                                Анализировать PDF файл
+                            </Button>
 
                             <Button
                                 onClick={() => {
@@ -160,7 +194,17 @@ export default function PDFViewer({ filePath, rotation = 0, isFullscreen = false
                         {/* Детальная диагностика */}
                         {showDiagnostics && pdfDiagnostics && (
                             <div className="mt-4 bg-gray-50 p-4 rounded-lg text-left">
-                                <h4 className="font-medium text-gray-800 mb-3">Техническая диагностика:</h4>
+                                <div className="flex items-center justify-between mb-3">
+                                    <h4 className="font-medium text-gray-800">Техническая диагностика:</h4>
+                                    <Button
+                                        onClick={() => setShowDiagnostics(false)}
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 px-2"
+                                    >
+                                        ✕
+                                    </Button>
+                                </div>
 
                                 <div className="grid grid-cols-2 gap-4 text-sm mb-3">
                                     <div>
@@ -185,7 +229,7 @@ export default function PDFViewer({ filePath, rotation = 0, isFullscreen = false
                                     <div className="mb-3">
                                         <h5 className="font-medium text-gray-700 mb-2">Рекомендации:</h5>
                                         <ul className="text-xs text-gray-600 space-y-1">
-                                            {pdfDiagnostics.suggestions.map((suggestion, index) => (
+                                            {pdfDiagnostics.suggestions.map((suggestion: string, index: number) => (
                                                 <li key={index} className="flex items-start">
                                                     <span className="text-blue-500 mr-2">•</span>
                                                     {suggestion}
@@ -194,6 +238,16 @@ export default function PDFViewer({ filePath, rotation = 0, isFullscreen = false
                                         </ul>
                                     </div>
                                 )}
+
+                                <div className="mt-3 p-3 bg-blue-50 rounded border-l-4 border-blue-400">
+                                    <h6 className="font-medium text-blue-800 mb-1">Что делать дальше:</h6>
+                                    <p className="text-xs text-blue-700">
+                                        {pdfDiagnostics.isValid
+                                            ? 'PDF файл валиден. Попробуйте перезагрузить страницу или использовать другой браузер.'
+                                            : 'Следуйте рекомендациям выше. Если проблема не решается, попробуйте открыть файл в другом PDF просмотрщике.'
+                                        }
+                                    </p>
+                                </div>
                             </div>
                         )}
                     </div>

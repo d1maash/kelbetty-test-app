@@ -127,6 +127,17 @@ export async function getPDFInfo(buffer: Buffer): Promise<{
         if (validation.details.fileSize < 1000) {
             suggestions.push('Файл слишком маленький. Возможно, загрузка была прервана.')
         }
+        
+        // Специальные рекомендации для файлов с казахскими именами
+        if (validation.details.fileSize > 500000) { // > 500KB
+            suggestions.push('Файл большого размера. Возможно, содержит много изображений или защищен.')
+            suggestions.push('Попробуйте открыть в Adobe Reader или Foxit для проверки защиты.')
+        }
+        
+        if (validation.details.fileSize > 1000000) { // > 1MB
+            suggestions.push('Очень большой файл. Может содержать встроенные шрифты или изображения.')
+            suggestions.push('Попробуйте конвертировать в более простой формат.')
+        }
     }
 
     return {

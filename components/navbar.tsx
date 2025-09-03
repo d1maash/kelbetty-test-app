@@ -38,6 +38,12 @@ export function Navbar() {
                     >
                         Для бизнеса
                     </Link>
+                    <Link
+                        href="/test-pdf-validation"
+                        className="text-sm font-medium transition-colors hover:text-primary"
+                    >
+                        Тест PDF
+                    </Link>
                     <ThemeToggle />
 
                     {isSignedIn ? (
@@ -89,6 +95,13 @@ export function Navbar() {
                             onClick={() => setMobileMenuOpen(false)}
                         >
                             Для бизнеса
+                        </Link>
+                        <Link
+                            href="/test-pdf-validation"
+                            className="block text-sm font-medium transition-colors hover:text-primary"
+                            onClick={() => setMobileMenuOpen(false)}
+                        >
+                            Тест PDF
                         </Link>
 
                         <div className="pt-3 border-t space-y-2">
