@@ -37,12 +37,12 @@ export default function PDFViewer({ filePath, rotation = 0, isFullscreen = false
         setError(null)
     }
 
-        const onDocumentLoadError = async (error: Error) => {
+    const onDocumentLoadError = async (error: Error) => {
         console.error('PDF load error:', error)
-        
+
         // Детальная диагностика ошибки PDF
         let errorMessage = 'Ошибка загрузки PDF документа'
-        
+
         if (error.message.includes('Invalid PDF structure')) {
             errorMessage = 'PDF файл поврежден или имеет неверную структуру'
         } else if (error.message.includes('Password required')) {
@@ -54,10 +54,10 @@ export default function PDFViewer({ filePath, rotation = 0, isFullscreen = false
         } else if (error.message.includes('Invalid XRef entry')) {
             errorMessage = 'PDF файл имеет поврежденную структуру ссылок'
         }
-        
+
         setError(errorMessage)
         setLoading(false)
-        
+
         // Запускаем диагностику PDF
         try {
             const response = await fetch(filePath)
@@ -69,7 +69,7 @@ export default function PDFViewer({ filePath, rotation = 0, isFullscreen = false
         } catch (diagnosticError) {
             console.warn('PDF diagnostics failed:', diagnosticError)
         }
-        
+
         // Логируем детали для отладки
         console.error('PDF Error Details:', {
             message: error.message,
@@ -98,7 +98,7 @@ export default function PDFViewer({ filePath, rotation = 0, isFullscreen = false
         setScale(1.0)
     }
 
-        if (error) {
+    if (error) {
         return (
             <Card className="h-full">
                 <CardContent className="flex items-center justify-center h-full">
@@ -108,7 +108,7 @@ export default function PDFViewer({ filePath, rotation = 0, isFullscreen = false
                             <h3 className="text-lg font-semibold mb-2">Ошибка загрузки PDF</h3>
                             <p className="text-sm mb-3">{error}</p>
                         </div>
-                        
+
                         <div className="bg-red-50 p-3 rounded-lg text-left mb-4">
                             <h4 className="font-medium text-red-800 mb-2">Возможные причины:</h4>
                             <ul className="text-xs text-red-700 space-y-1">
@@ -119,20 +119,20 @@ export default function PDFViewer({ filePath, rotation = 0, isFullscreen = false
                                 <li>• Файл загружен не полностью</li>
                             </ul>
                         </div>
-                        
+
                         <div className="space-y-2">
-                            <Button 
-                                onClick={() => window.location.reload()} 
+                            <Button
+                                onClick={() => window.location.reload()}
                                 className="w-full"
                                 variant="outline"
                             >
                                 <RefreshCw className="h-4 w-4 mr-2" />
                                 Попробовать снова
                             </Button>
-                            
+
                             {pdfDiagnostics && (
-                                <Button 
-                                    onClick={() => setShowDiagnostics(!showDiagnostics)} 
+                                <Button
+                                    onClick={() => setShowDiagnostics(!showDiagnostics)}
                                     className="w-full"
                                     variant="secondary"
                                 >
@@ -140,15 +140,15 @@ export default function PDFViewer({ filePath, rotation = 0, isFullscreen = false
                                     {showDiagnostics ? 'Скрыть' : 'Показать'} диагностику
                                 </Button>
                             )}
-                            
-                            <Button 
+
+                            <Button
                                 onClick={() => {
                                     // Скачиваем файл для проверки
                                     const link = document.createElement('a')
                                     link.href = filePath
                                     link.download = 'document.pdf'
                                     link.click()
-                                }} 
+                                }}
                                 className="w-full"
                                 variant="outline"
                             >
@@ -156,12 +156,12 @@ export default function PDFViewer({ filePath, rotation = 0, isFullscreen = false
                                 Скачать для проверки
                             </Button>
                         </div>
-                        
+
                         {/* Детальная диагностика */}
                         {showDiagnostics && pdfDiagnostics && (
                             <div className="mt-4 bg-gray-50 p-4 rounded-lg text-left">
                                 <h4 className="font-medium text-gray-800 mb-3">Техническая диагностика:</h4>
-                                
+
                                 <div className="grid grid-cols-2 gap-4 text-sm mb-3">
                                     <div>
                                         <span className="text-gray-500">Размер файла:</span>
@@ -180,7 +180,7 @@ export default function PDFViewer({ filePath, rotation = 0, isFullscreen = false
                                         <span className="ml-2 font-mono">{pdfDiagnostics.technicalDetails.pageCount || 'Неизвестно'}</span>
                                     </div>
                                 </div>
-                                
+
                                 {pdfDiagnostics.suggestions.length > 0 && (
                                     <div className="mb-3">
                                         <h5 className="font-medium text-gray-700 mb-2">Рекомендации:</h5>
