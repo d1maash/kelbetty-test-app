@@ -29,8 +29,8 @@ export default function TestPDFValidation() {
         setDiagnostics(null)
 
         try {
-            const buffer = await file.arrayBuffer()
-            const result = await getPDFInfo(Buffer.from(buffer))
+            const arrayBuffer = await file.arrayBuffer()
+            const result = await getPDFInfo(arrayBuffer)
             setDiagnostics(result)
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Неизвестная ошибка')

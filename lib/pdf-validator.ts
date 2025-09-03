@@ -19,7 +19,7 @@ export interface PDFValidationResult {
 /**
  * Проверяет, является ли файл валидным PDF
  */
-export async function validatePDF(buffer: Buffer): Promise<PDFValidationResult> {
+export async function validatePDF(arrayBuffer: ArrayBuffer): Promise<PDFValidationResult> {
     const result: PDFValidationResult = {
         isValid: false,
         details: {
@@ -33,17 +33,20 @@ export async function validatePDF(buffer: Buffer): Promise<PDFValidationResult> 
 
     try {
         // Проверяем размер файла
-        if (buffer.length < 100) {
+        if (arrayBuffer.byteLength < 100) {
             result.error = 'Файл слишком маленький для PDF'
             return result
         }
 
         // Получаем первые 1024 байта для анализа
-        const header = buffer.slice(0, Math.min(1024, buffer.length))
-        result.details.headerBytes = header.toString('hex', 0, 32).toUpperCase()
+        const uint8Array = new Uint8Array(arrayBuffer)
+        const header = uint8Array.slice(0, Math.min(1024, arrayBuffer.byteLength))
+        result.details.headerBytes = Array.from(header.slice(0, 32))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('').toUpperCase()
 
         // Проверяем PDF заголовок
-        const headerText = header.toString('utf8', 0, 100)
+        const headerText = new TextDecoder().decode(header.slice(0, 100))
         if (headerText.startsWith('%PDF-')) {
             result.details.hasValidHeader = true
             
@@ -58,7 +61,7 @@ export async function validatePDF(buffer: Buffer): Promise<PDFValidationResult> 
         }
 
         // Проверяем структуру файла
-        const endOfFile = buffer.slice(-1024).toString('utf8')
+        const endOfFile = new TextDecoder().decode(uint8Array.slice(-1024))
         if (endOfFile.includes('%%EOF')) {
             result.details.hasValidStructure = true
         } else {
@@ -67,7 +70,7 @@ export async function validatePDF(buffer: Buffer): Promise<PDFValidationResult> 
         }
 
         // Проверяем на защиту паролем
-        const content = buffer.toString('utf8')
+        const content = new TextDecoder().decode(uint8Array)
         if (content.includes('/Encrypt') || content.includes('/Encryption')) {
             result.details.isPasswordProtected = true
             result.error = 'PDF файл защищен паролем'
@@ -95,13 +98,13 @@ export async function validatePDF(buffer: Buffer): Promise<PDFValidationResult> 
 /**
  * Получает детальную информацию о PDF файле
  */
-export async function getPDFInfo(buffer: Buffer): Promise<{
+export async function getPDFInfo(arrayBuffer: ArrayBuffer): Promise<{
     isValid: boolean
     error?: string
     suggestions: string[]
     technicalDetails: Record<string, any>
 }> {
-    const validation = await validatePDF(buffer)
+    const validation = await validatePDF(arrayBuffer)
     
     const suggestions: string[] = []
     const technicalDetails: Record<string, any> = {
@@ -151,14 +154,15 @@ export async function getPDFInfo(buffer: Buffer): Promise<{
 /**
  * Пытается восстановить поврежденный PDF
  */
-export async function attemptPDFRecovery(buffer: Buffer): Promise<{
+export async function attemptPDFRecovery(arrayBuffer: ArrayBuffer): Promise<{
     recovered: boolean
     recoveredBuffer?: Buffer
     message: string
 }> {
     try {
         // Проверяем, есть ли PDF заголовок
-        const header = buffer.slice(0, 100).toString('utf8')
+        const uint8Array = new Uint8Array(arrayBuffer)
+        const header = new TextDecoder().decode(uint8Array.slice(0, 100))
         if (!header.includes('%PDF')) {
             return {
                 recovered: false,
@@ -167,21 +171,21 @@ export async function attemptPDFRecovery(buffer: Buffer): Promise<{
         }
 
         // Ищем %%EOF в конце файла
-        const endOfFile = buffer.slice(-1024).toString('utf8')
+        const endOfFile = new TextDecoder().decode(uint8Array.slice(-1024))
         if (endOfFile.includes('%%EOF')) {
             return {
                 recovered: true,
-                recoveredBuffer: buffer,
+                recoveredBuffer: Buffer.from(arrayBuffer),
                 message: 'PDF файл уже валиден'
             }
         }
 
         // Пытаемся найти конец PDF в середине файла
-        const content = buffer.toString('utf8')
+        const content = new TextDecoder().decode(uint8Array)
         const eofIndex = content.lastIndexOf('%%EOF')
         
         if (eofIndex > 0) {
-            const recoveredBuffer = buffer.slice(0, eofIndex + 6) // +6 для %%EOF
+            const recoveredBuffer = Buffer.from(arrayBuffer.slice(0, eofIndex + 6)) // +6 для %%EOF
             return {
                 recovered: true,
                 recoveredBuffer,
