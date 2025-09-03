@@ -1,0 +1,189 @@
+/* Стили для react-pdf */
+.react-pdf__Page {
+    margin: 0 auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.react-pdf__Page__canvas {
+    display: block;
+    margin: 0 auto;
+}
+
+.react-pdf__Page__textContent {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    line-height: 1.0;
+    opacity: 0.2;
+    color: transparent;
+    user-select: none;
+}
+
+.react-pdf__Page__textContent span {
+    position: absolute;
+    white-space: pre;
+    cursor: text;
+    transform-origin: 0% 0%;
+}
+
+.react-pdf__Page__annotations {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.react-pdf__Page__annotation {
+    position: absolute;
+    pointer-events: auto;
+}
+
+.react-pdf__Page__annotation--link {
+    cursor: pointer;
+}
+
+.react-pdf__Page__annotation--button {
+    cursor: pointer;
+}
+
+.react-pdf__Page__annotation--highlight {
+    background: rgba(255, 255, 0, 0.3);
+}
+
+.react-pdf__Page__annotation--underline {
+    border-bottom: 2px solid rgba(255, 0, 0, 0.8);
+}
+
+.react-pdf__Page__annotation--strikeout {
+    border-top: 2px solid rgba(255, 0, 0, 0.8);
+}
+
+.react-pdf__Page__annotation--ink {
+    background: rgba(0, 0, 255, 0.1);
+}
+
+.react-pdf__Page__annotation--freeText {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+    padding: 2px;
+}
+
+.react-pdf__Page__annotation--stamp {
+    background: rgba(255, 255, 0, 0.3);
+    border: 1px solid rgba(255, 0, 0, 0.8);
+    border-radius: 3px;
+    padding: 2px;
+}
+
+.react-pdf__Page__annotation--popup {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+    padding: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.react-pdf__Page__annotation--line {
+    background: rgba(255, 0, 0, 0.8);
+}
+
+.react-pdf__Page__annotation--square {
+    background: rgba(255, 255, 0, 0.3);
+    border: 1px solid rgba(255, 0, 0, 0.8);
+}
+
+.react-pdf__Page__annotation--circle {
+    background: rgba(255, 255, 0, 0.3);
+    border: 1px solid rgba(255, 0, 0, 0.8);
+    border-radius: 50%;
+}
+
+.react-pdf__Page__annotation--polygon {
+    background: rgba(255, 255, 0, 0.3);
+    border: 1px solid rgba(255, 0, 0, 0.8);
+}
+
+.react-pdf__Page__annotation--polyline {
+    background: rgba(255, 0, 0, 0.8);
+}
+
+.react-pdf__Page__annotation--caret {
+    background: rgba(255, 255, 0, 0.8);
+}
+
+.react-pdf__Page__annotation--fileAttachment {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+    padding: 4px;
+}
+
+.react-pdf__Page__annotation--sound {
+    background: rgba(0, 255, 0, 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.8);
+    border-radius: 50%;
+    padding: 8px;
+}
+
+.react-pdf__Page__annotation--movie {
+    background: rgba(255, 0, 0, 0.3);
+    border: 1px solid rgba(255, 0, 0, 0.8);
+    border-radius: 3px;
+    padding: 4px;
+}
+
+.react-pdf__Page__annotation--widget {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+    padding: 4px;
+}
+
+.react-pdf__Page__annotation--screen {
+    background: rgba(0, 0, 255, 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.8);
+    border-radius: 3px;
+    padding: 4px;
+}
+
+.react-pdf__Page__annotation--printerMark {
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.8);
+    border-radius: 3px;
+    padding: 2px;
+}
+
+.react-pdf__Page__annotation--trapNet {
+    background: rgba(255, 0, 255, 0.3);
+    border: 1px solid rgba(255, 0, 255, 0.8);
+    border-radius: 3px;
+    padding: 2px;
+}
+
+.react-pdf__Page__annotation--watermark {
+    background: rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+    padding: 4px;
+}
+
+.react-pdf__Page__annotation--3D {
+    background: rgba(0, 255, 255, 0.3);
+    border: 1px solid rgba(0, 255, 255, 0.8);
+    border-radius: 3px;
+    padding: 4px;
+}
+
+.react-pdf__Page__annotation--redact {
+    background: rgba(255, 0, 0, 0.8);
+    border: 1px solid rgba(255, 0, 0, 0.8);
+    border-radius: 3px;
+    padding: 2px;
+}
