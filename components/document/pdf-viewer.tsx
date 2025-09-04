@@ -35,8 +35,8 @@ export default function PDFViewer({ filePath, rotation = 0, isFullscreen = false
             try {
                 const response = await fetch(filePath)
                 if (response.ok) {
-                    const buffer = await response.arrayBuffer()
-                    const diagnostics = await getPDFInfo(Buffer.from(buffer))
+                    const arrayBuffer = await response.arrayBuffer()
+                    const diagnostics = await getPDFInfo(arrayBuffer)
                     setPdfDiagnostics(diagnostics)
 
                     // Если PDF невалиден, показываем предупреждение

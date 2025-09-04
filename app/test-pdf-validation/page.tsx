@@ -44,8 +44,8 @@ export default function TestPDFValidation() {
 
         setLoading(true)
         try {
-            const buffer = await file.arrayBuffer()
-            const result = await attemptPDFRecovery(Buffer.from(buffer))
+            const arrayBuffer = await file.arrayBuffer()
+            const result = await attemptPDFRecovery(arrayBuffer)
             console.log('Recovery result:', result)
             alert(result.message)
         } catch (err) {
